@@ -22,32 +22,29 @@ from .models import CustomUser
 #             }, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-CustomUser = get_user_model()
-
-class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-            if user.is_active:
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'user': {
-                        'username': user.username,
-                        'email': user.email,
-                        'avatar': request.build_absolute_uri(user.avatar.url) if user.avatar else None
-                    }
-                })
-            else:
-                return Response({'error': 'Account is inactive'}, status=status.HTTP_403_FORBIDDEN)
-        else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+# class LoginView(APIView):
+#     def post(self, request):
+#         username = request.data.get('username')
+#         password = request.data.get('password')
+#
+#         user = authenticate(request, username=username, password=password)
+#
+#         if user is not None:
+#             if user.is_active:
+#                 refresh = RefreshToken.for_user(user)
+#                 return Response({
+#                     'refresh': str(refresh),
+#                     'access': str(refresh.access_token),
+#                     'user': {
+#                         'username': user.username,
+#                         'email': user.email,
+#                         'avatar': request.build_absolute_uri(user.avatar.url) if user.avatar else None
+#                     }
+#                 })
+#             else:
+#                 return Response({'error': 'Account is inactive'}, status=status.HTTP_403_FORBIDDEN)
+#         else:
+#             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutView(APIView):
@@ -67,7 +64,6 @@ class CustomUserLoginView(TokenObtainPairView):
 
 
 class CustomUserTokenRefreshView(APIView):
-
     def post(self, request, *args, **kwargs):
         try:
             refresh_token = request.data['refresh']
@@ -81,7 +77,6 @@ class CustomUserTokenRefreshView(APIView):
 
 class UserRegistrationView(APIView):
     serializer_class = UserRegistrationSerializer
-
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         data = request.data
@@ -101,7 +96,7 @@ class UserRegistrationView(APIView):
                 'username': user.username,
                 'email': user.email,
                 'avatar': user.avatar.url if user.avatar else None,
-                'confirmation_code': confirmation_code,
+                # 'confirmation_code': confirmation_code,
             }
             return Response(response_data, status=status.HTTP_201_CREATED)
 
