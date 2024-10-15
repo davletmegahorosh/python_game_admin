@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=20, unique=True)
     email = models.EmailField()
-    avatar = models.ImageField(upload_to='avatar/', null=True, blank=True)
+    avatar = models.ImageField(upload_to='media/', null=True, blank=True)
     confirmation_code = models.CharField(max_length=4, blank=True)
 
     # Добавляем уникальные related_name, чтобы избежать конфликта

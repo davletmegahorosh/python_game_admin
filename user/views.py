@@ -1,28 +1,36 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
+from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import CustomUserSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-class RegisterView(APIView):
-    def post(self, request):
-        serializer = CustomUserSerializer(data=request.data)
+from .serializers import UserRegistrationSerializer
+from .models import CustomUser
 
-        if serializer.is_valid():
-            user = serializer.save()
-            confirmation_code = serializer.validated_data.get('confirmation_code', None)
-            return Response({'message': 'User registered successfully', 'confirmation_code': confirmation_code}, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# class RegisterView(APIView):
+#     def post(self, request):
+#         serializer = CustomUserSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = serializer.save()
+#             confirmation_code = user.confirmation_code
+#             return Response({
+#                 'message': 'User registered successfully',
+#                 'confirmation_code': confirmation_code
+#             }, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+CustomUser = get_user_model()
 
 class LoginView(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
 
-        user = authenticate(username=username, password=password)
+        user = authenticate(request, username=username, password=password)
 
         if user is not None:
             if user.is_active:
@@ -37,7 +45,7 @@ class LoginView(APIView):
                     }
                 })
             else:
-                return Response({'error': 'Account is inactive, please activate your account'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'error': 'Account is inactive'}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -52,3 +60,64 @@ class LogoutView(APIView):
             return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomUserLoginView(TokenObtainPairView):
+    pass
+
+
+class CustomUserTokenRefreshView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token = request.data['refresh']
+            token = RefreshToken(refresh_token)
+            access_token = str(token.access_token)
+            return Response({'access': access_token,
+                             'refresh': token}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class UserRegistrationView(APIView):
+    serializer_class = UserRegistrationSerializer
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        data = request.data
+        if serializer.is_valid():
+            user = CustomUser.objects.create_user(
+                username=data['username'],
+                email=data.get('email'),
+                password=data['password'],
+                is_active=False,
+            )
+            confirmation_code = get_random_string(length=4, allowed_chars='0123456789')
+
+            user.confirmation_code = confirmation_code
+            user.save()
+
+            response_data = {
+                'username': user.username,
+                'email': user.email,
+                'avatar': user.avatar.url if user.avatar else None,
+                'confirmation_code': confirmation_code,
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        confirmation_code = request.data.get('confirmation_code')
+        if not confirmation_code:
+            return Response({'error': 'Confirmation code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(confirmation_code=confirmation_code, is_active=False)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'Invalid or expired confirmation code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.is_active = True
+        user.save()
+
+        return Response({'message': 'Email confirmed successfully.'}, status=status.HTTP_200_OK)

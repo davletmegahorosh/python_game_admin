@@ -19,12 +19,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
-    'drf_spectacular',
     'drf_spectacular_sidecar',
     'rest_framework_simplejwt',
-    'user',
+    'rest_framework',
+    'drf_spectacular',
+    "corsheaders",
 
+
+    'user',
 ]
 
 MIDDLEWARE = [
@@ -107,6 +109,8 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
+
+AUTH_USER_MODEL = 'user.CustomUser'
 
 
 STATIC_URL = "static/"
