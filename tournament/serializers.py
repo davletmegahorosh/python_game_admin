@@ -38,4 +38,3 @@ class TournamentSerializer(serializers.ModelSerializer):
         tournament = Tournament.objects.create(name=name, game_map=game_map)
 
         return tournament
-
