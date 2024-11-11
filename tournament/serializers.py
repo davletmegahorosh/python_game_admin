@@ -28,7 +28,7 @@ class TournamentSerializer(serializers.ModelSerializer):
         except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
             raise serializers.ValidationError("Неверный формат или кодировка для game_map.")
 
-        #comment
+        #
         return value
 
     def create(self, validated_data):
