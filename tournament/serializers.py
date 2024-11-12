@@ -17,6 +17,7 @@ class TournamentSerializer(serializers.ModelSerializer):
 
             if not all(isinstance(i, list) for i in decoded_map):
                 raise serializers.ValidationError("game_map должен быть двумерным массивом.")
+            #
 
             row_length = len(decoded_map[0])
             if not all(len(row) == row_length for row in decoded_map):
